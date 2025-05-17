@@ -498,7 +498,7 @@
     </div>
 
     <!-- Print Area (Hidden until print) -->
-    <div id="printArea" style="display: block;">
+    <div id="printArea" style="display: none;">
         <div class="print-header">
             <div class="print-title">Deductions Table</div>
             <div class="print-subtitle" id="printBillTitle"></div>
@@ -510,17 +510,6 @@
         </div>
 
         <div id="printTableContainer"></div>
-
-        <div class="print-footer">
-            <p>Prepared on Initiative of Mrs. Premlata Jain, AAO, PWD Udaipur</p>
-            <p id="printTimestamp"></p>
-        </div>
-
-        <div class="print-signatures">
-            <div class="signature-block">Prepared By</div>
-            <div class="signature-block">Verified By</div>
-            <div class="signature-block">Approved By</div>
-        </div>
     </div>
 
     <script>
@@ -535,8 +524,7 @@
         // Store custom deductions
         let customDeductions = [];
         
-        // Initialize timestamp
-        document.getElementById('timestamp').textContent = `Generated on: ${new Date().toLocaleString()}`;
+        
         
         // Format currency in Indian Rupees
         function formatIndianCurrency(amount) {
@@ -572,13 +560,20 @@
             return isValid;
         }
         
-        // Round GST to the next even number
-        function roundToEven(num) {
-            // First round up to integer
-            let rounded = Math.ceil(num);
-            // If the rounded number is odd, add 1 to make it even
-            return rounded % 2 === 0 ? rounded : rounded + 1;
+                function roundToEven(num) {
+        // First, round to the nearest whole number
+        const roundedToNearest = Math.round(num);
+
+        // Check if the rounded number is odd
+        if (roundedToNearest % 2 !== 0) {
+            // If it's odd, round up to the next even number
+            return roundedToNearest + 1;
+        } else {
+            // If it's already even, return it
+            return roundedToNearest;
         }
+        }
+                
         
         // Generate the deduction table
         function generateTable() {
@@ -693,11 +688,8 @@
             printTableContainer.innerHTML = '';
             printTableContainer.appendChild(printTable);
             
-            // Set print details
-            document.getElementById('printBillTitle').textContent = `Bill Amount: ${formatIndianCurrency(amount)}`;
-            document.getElementById('printDate').textContent = `Date: ${new Date().toLocaleDateString()}`;
-            document.getElementById('printReference').textContent = `Reference: BILL-${Date.now().toString().slice(-6)}`;
-            document.getElementById('printTimestamp').textContent = `Generated on: ${new Date().toLocaleString()}`;
+           
+            
             
             // Show success message
             const successMessage = document.getElementById('successMessage');
