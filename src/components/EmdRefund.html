@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=210mm, height=297mm">
+    <title>Hand Receipt (RPWA 28)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+        }
+
+        .container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 10mm;
+            border: 2px solid #ccc;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-section input:focus {
+            outline: none;
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .generate-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .generate-button:hover {
+            background-color: #45a049;
+        }
+
+        .print-area {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .details {
+            margin-bottom: 1px;
+        }
+
+        .amount-words {
+            font-style: italic;
+        }
+
+        .signature-area {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .signature-area td, .signature-area th {
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: left;
+        }
+
+        .offices {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .offices td, .offices th {
+            border: 1px solid black;
+            padding: 5px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+
+        .input-field {
+            border-bottom: 1px dotted #ccc;
+            padding: 3px;
+            width: calc(100% - 10px);
+            display: inline-block;
+        }
+
+        @media print {
+            .container {
+                border: none;
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 0;
+            }
+
+            .input-field {
+                border: none;
+            }
+
+            body {
+                margin: 0;
+            }
+        }
+
+        .seal-container {
+            position: absolute;
+            left: 10mm;
+            bottom: 10mm;
+            width: 40mm;
+            height: 25mm;
+            z-index: 10;
+        }
+
+        .seal {
+            max-width: 100%;
+            max-height: 100%;
+            text-align: center;
+            line-height: 40mm;
+            color: blue;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .bottom-left-box {
+            position: absolute;
+            bottom: 40mm;
+            left: 40mm;
+            border: 2px solid black;
+            padding: 10px;
+            width: 300px;
+            text-align: left;
+            height: auto;
+        }
+
+        .bottom-left-box p {
+            margin: 3px 0;
+        }
+
+        .bottom-left-box .blue-text {
+            color: blue;
+        }
+
+        #prompt-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            z-index: 1000;
+        }
+
+        #prompt-container input, #prompt-container button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-section">
+            <label for="payee">Payee Name *</label>
+            <input type="text" id="payee" required>
+            <div id="payeeError" class="error"></div>
+        </div>
+
+        <div class="form-section">
+            <label for="amount">Amount (₹) *</label>
+            <input type="number" id="amount" step="0.01" required>
+            <div id="amountError" class="error"></div>
+        </div>
+
+        <div class="form-section">
+            <label for="work">Work Description *</label>
+            <textarea id="work" rows="3" required></textarea>
+            <div id="workError" class="error"></div>
+        </div>
+
+        <button class="generate-button" onclick="generateReceipt()">Generate Receipt</button>
+
+        <div id="printArea" class="print-area"></div>
+    </div>
+
+    <script>
+        function generateReceipt() {
+            const payee = document.getElementById('payee').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const work = document.getElementById('work').value.trim();
+            
+            // Reset error messages
+            document.getElementById('payeeError').style.display = 'none';
+            document.getElementById('amountError').style.display = 'none';
+            document.getElementById('workError').style.display = 'none';
+
+            // Validate inputs
+            if (!payee) {
+                document.getElementById('payeeError').textContent = 'Payee name is required';
+                document.getElementById('payeeError').style.display = 'block';
+                return;
+            }
+
+            if (isNaN(amount) || amount <= 0) {
+                document.getElementById('amountError').textContent = 'Please enter a valid amount';
+                document.getElementById('amountError').style.display = 'block';
+                return;
+            }
+
+            if (!work) {
+                document.getElementById('workError').textContent = 'Work description is required';
+                document.getElementById('workError').style.display = 'block';
+                return;
+            }
+
+            // Generate receipt
+            const receiptHTML = generateReceiptHTML(payee, amount, work);
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = receiptHTML;
+            printArea.style.display = 'block';
+
+            // Print automatically
+            window.print();
+        }
+
+        function generateReceiptHTML(payee, amount, work) {
+            const amountWords = convertNumberToWords(amount);
+            const date = new Date().toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            return `
+                <div class="header">
+                    <h2>Payable to: - ${payee} ( Electric Contractor)</h2>
+                    <h2>HAND RECEIPT (RPWA 28)</h2>
+                    <p>(Referred to in PWF&A Rules 418,424,436 & 438)</p>
+                    <p>Division - PWD Electric Division, Udaipur</p>
+                </div>
+                <div class="details">
+                    <p>(1)Cash Book Voucher No. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+                    <p>(2)Cheque No. and Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+                    <p>(3) Pay for ECS Rs.${amount}/- (Rupees <span id="amount-words" class="amount-words">${amountWords} only</span>)</p>
+                    <p>(4) Paid by me</p>
+                    <p>(5) Received from The Executive Engineer PWD Electric Division, Udaipur the sum of Rs. ${amount}/- (Rupees <span id="amount-words" class="amount-words">${amountWords} only</span>)</p>
+                    <p> Name of work for which payment is made: <span id="work-name" class="input-field">${work}</span></p>
+                    <p> Chargeable to Head:- 8443 [EMD-Refund] </p>   
+                    <table class="signature-area">
+                        <tr>
+                            <td>Witness</td>
+                            <td>Stamp</td>
+                            <td>Signature of payee</td>
+                        </tr>
+                        <tr>
+                            <td>Cash Book No. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Page No. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                    <table class="offices">
+                        <tr>
+                            <td>For use in the Divisional Office</td>
+                            <td>For use in the Accountant General's office</td>
+                        </tr>
+                        <tr>
+                            <td>Checked</td>
+                            <td>Audited/Reviewed</td>
+                        </tr>
+                        <tr>
+                            <td>Accounts Clerk</td>
+                            <td>
+                                DA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp  Auditor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp  Supdt. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp  G.O.
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="seal-container">
+                    <div class="seal">
+                        <p></p>
+                        <p></p>
+                        <p></p>
+                    </div>
+                </div>
+                <div class="bottom-left-box">
+                    <p class="blue-text"> Passed for Rs. ${amount}</p>
+                    <p class="blue-text"> In Words Rupees: ${amountWords} Only</p>
+                    <p class="blue-text"> Chargeable to Head:- 8443 [EMD-Refund]</p>
+                    <div class="seal">
+                        <p>Ar.</p>
+                        <p>D.A.</p>
+                        <p>E.E.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function convertNumberToWords(num) {
+            const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const thousands = ['', 'Thousand', 'Lakh', 'Crore'];
+
+            if (num === 0) return 'Zero';
+
+            let words = '';
+            let i = 0;
+
+            while (num > 0) {
+                let chunk = num % 1000;
+                num = Math.floor(num / 1000);
+
+                if (chunk > 0) {
+                    words = convertChunk(chunk) + ' ' + thousands[i] + (words ? ' ' + words : '');
+                }
+                i++;
+            }
+
+            return words + ' Only';
+        }
+
+        function convertChunk(num) {
+            if (num < 10) return units[num];
+            if (num < 20) return teens[num - 10];
+            if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + units[num % 10] : '');
+            return 'Hundred ' + convertChunk(num % 100);
+        }
+    </script>
+</body>
+</html>
