@@ -19,68 +19,6 @@
             padding: 20px;
             box-sizing: border-box;
             position: relative;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .form-section {
-            margin-bottom: 20px;
-        }
-
-        .form-section label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-section input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-section input:focus {
-            outline: none;
-            border-color: #2c3e50;
-            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
-        }
-
-        .error {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .generate-button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-
-        .generate-button:hover {
-            background-color: #45a049;
-        }
-
-        .print-area {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 4px;
         }
 
         .header {
@@ -129,20 +67,31 @@
         }
 
         @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
             .container {
                 border: none;
                 width: 210mm;
                 min-height: 297mm;
                 margin: 0;
-                padding: 0;
+                padding: 20mm;
+                box-sizing: border-box;
+            }
+
+            #prompt-container {
+                display: none !important;
             }
 
             .input-field {
                 border: none;
-            }
-
-            body {
-                margin: 0;
             }
         }
 
@@ -191,90 +140,119 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: white;
-            padding: 20px;
-            border: 1px solid #ccc;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 1000;
+            width: 320px;
         }
 
-        #prompt-container input, #prompt-container button {
-            margin-bottom: 10px;
+        #prompt-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        #prompt-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        #prompt-container input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+
+        #generate-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #generate-button:hover {
+            background-color: #1976D2;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="form-section">
-            <label for="payee">Payee Name *</label>
-            <input type="text" id="payee" required>
-            <div id="payeeError" class="error"></div>
-        </div>
-
-        <div class="form-section">
-            <label for="amount">Amount (₹) *</label>
-            <input type="number" id="amount" step="0.01" required>
-            <div id="amountError" class="error"></div>
-        </div>
-
-        <div class="form-section">
-            <label for="work">Work Description *</label>
-            <textarea id="work" rows="3" required></textarea>
-            <div id="workError" class="error"></div>
-        </div>
-
-        <button class="generate-button" onclick="generateReceipt()">Generate Receipt</button>
-
-        <div id="printArea" class="print-area"></div>
+    <div id="prompt-container">
+        <label for="payee">Payee Name:</label><br>
+        <input type="text" id="payee"><br>
+        <label for="amount">Amount:</label><br>
+        <input type="number" id="amount"><br>
+        <label for="work">Name of Work:</label><br>
+        <input type="text" id="work"><br>
+        <button id="generate-button">Generate Receipt</button>
     </div>
 
+    <div class="container" id="receipt-content"></div>
+
     <script>
-        function generateReceipt() {
-            const payee = document.getElementById('payee').value.trim();
-            const amount = parseFloat(document.getElementById('amount').value);
-            const work = document.getElementById('work').value.trim();
-            
-            // Reset error messages
-            document.getElementById('payeeError').style.display = 'none';
-            document.getElementById('amountError').style.display = 'none';
-            document.getElementById('workError').style.display = 'none';
+        function convertNumberToWords(num) {
+            const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+            const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+            const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+            const crore = " Crore ";
+            const lakh = " Lakh ";
+            const thousand = " Thousand ";
+            const hundred = " Hundred ";
+            const and = " and ";
 
-            // Validate inputs
-            if (!payee) {
-                document.getElementById('payeeError').textContent = 'Payee name is required';
-                document.getElementById('payeeError').style.display = 'block';
-                return;
+            if (num === 0) return "Zero";
+
+            let words = "";
+
+            if (Math.floor(num / 10000000)) {
+                words += convertNumberToWords(Math.floor(num / 10000000)) + crore;
+                num %= 10000000;
             }
 
-            if (isNaN(amount) || amount <= 0) {
-                document.getElementById('amountError').textContent = 'Please enter a valid amount';
-                document.getElementById('amountError').style.display = 'block';
-                return;
+            if (Math.floor(num / 100000)) {
+                words += convertNumberToWords(Math.floor(num / 100000)) + lakh;
+                num %= 100000;
             }
 
-            if (!work) {
-                document.getElementById('workError').textContent = 'Work description is required';
-                document.getElementById('workError').style.display = 'block';
-                return;
+            if (Math.floor(num / 1000)) {
+                words += convertNumberToWords(Math.floor(num / 1000)) + thousand;
+                num %= 1000;
             }
 
-            // Generate receipt
-            const receiptHTML = generateReceiptHTML(payee, amount, work);
-            const printArea = document.getElementById('printArea');
-            printArea.innerHTML = receiptHTML;
-            printArea.style.display = 'block';
+            if (Math.floor(num / 100)) {
+                words += convertNumberToWords(Math.floor(num / 100)) + hundred;
+                num %= 100;
+            }
 
-            // Print automatically
-            window.print();
+            if (num > 0) {
+                if (words !== "") words += and;
+                if (num < 10) words += ones[num];
+                else if (num < 20) words += teens[num - 10];
+                else {
+                    words += tens[Math.floor(num / 10)];
+                    if (num % 10 > 0) words += " " + ones[num % 10];
+                }
+            }
+
+            return words;
         }
 
         function generateReceiptHTML(payee, amount, work) {
-            const amountWords = convertNumberToWords(amount);
-            const date = new Date().toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-
+            const amountInWords = convertNumberToWords(parseFloat(amount));
             return `
                 <div class="header">
                     <h2>Payable to: - ${payee} ( Electric Contractor)</h2>
@@ -285,9 +263,9 @@
                 <div class="details">
                     <p>(1)Cash Book Voucher No. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
                     <p>(2)Cheque No. and Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-                    <p>(3) Pay for ECS Rs.${amount}/- (Rupees <span id="amount-words" class="amount-words">${amountWords} only</span>)</p>
+                    <p>(3) Pay for ECS Rs.${amount}/- (Rupees <span id="amount-words" class="amount-words">${amountInWords} only</span>)</p>
                     <p>(4) Paid by me</p>
-                    <p>(5) Received from The Executive Engineer PWD Electric Division, Udaipur the sum of Rs. ${amount}/- (Rupees <span id="amount-words" class="amount-words">${amountWords} only</span>)</p>
+                    <p>(5) Received from The Executive Engineer PWD Electric Division, Udaipur the sum of Rs. ${amount}/- (Rupees <span id="amount-words" class="amount-words">${amountInWords} only</span>)</p>
                     <p> Name of work for which payment is made: <span id="work-name" class="input-field">${work}</span></p>
                     <p> Chargeable to Head:- 8443 [EMD-Refund] </p>   
                     <table class="signature-area">
@@ -328,7 +306,7 @@
                 </div>
                 <div class="bottom-left-box">
                     <p class="blue-text"> Passed for Rs. ${amount}</p>
-                    <p class="blue-text"> In Words Rupees: ${amountWords} Only</p>
+                    <p class="blue-text"> In Words Rupees: ${amountInWords} Only</p>
                     <p class="blue-text"> Chargeable to Head:- 8443 [EMD-Refund]</p>
                     <div class="seal">
                         <p>Ar.</p>
@@ -339,36 +317,21 @@
             `;
         }
 
-        function convertNumberToWords(num) {
-            const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-            const thousands = ['', 'Thousand', 'Lakh', 'Crore'];
-
-            if (num === 0) return 'Zero';
-
-            let words = '';
-            let i = 0;
-
-            while (num > 0) {
-                let chunk = num % 1000;
-                num = Math.floor(num / 1000);
-
-                if (chunk > 0) {
-                    words = convertChunk(chunk) + ' ' + thousands[i] + (words ? ' ' + words : '');
-                }
-                i++;
+        document.getElementById('generate-button').addEventListener('click', function() {
+            const enteredPayee = document.getElementById('payee').value;
+            const enteredAmount = parseFloat(document.getElementById('amount').value);
+            const enteredWork = document.getElementById('work').value;
+            if (enteredPayee && !isNaN(enteredAmount) && enteredWork) {
+                const receiptHTML = generateReceiptHTML(enteredPayee, enteredAmount, enteredWork);
+                document.getElementById('receipt-content').innerHTML = receiptHTML;
+                document.getElementById('prompt-container').style.display = 'none';
+                setTimeout(function() {
+                    window.print();
+                }, 100);
+            } else {
+                alert("Please provide all required information. Amount must be a number.");
             }
-
-            return words + ' Only';
-        }
-
-        function convertChunk(num) {
-            if (num < 10) return units[num];
-            if (num < 20) return teens[num - 10];
-            if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + units[num % 10] : '');
-            return 'Hundred ' + convertChunk(num % 100);
-        }
+        });
     </script>
 </body>
 </html>
