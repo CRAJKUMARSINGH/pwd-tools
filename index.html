@@ -7,11 +7,39 @@
     <title>Integrated PWD Tools</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        .button-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .button-container button {
+            background-color: purple;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .button-container button:hover {
+            background-color: indigo;
+        }
+        iframe {
+            border: 1px solid #ccc;
+            width: 100%;
+            height: 800px;
+            margin-top: 30px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Integrated PWD Tools</h1>
-    <p>Prepared on Initiative of Mrs. Premlata Jain, AAO, PWD Udaipur</p>
+    <h1 style="text-align:center;">Integrated PWD Tools</h1>
+    <p style="text-align:center;">Prepared on Initiative of Mrs. Premlata Jain, AAO, PWD Udaipur</p>
     
+    <!-- First row of tools -->
     <div class="button-container">
         <button onclick="navigateTo('src/components/BillNoteSheet.html')">Bill Note Sheet</button>
         <button onclick="navigateTo('src/components/DeductionsTable.html')">Deductions Table</button>
@@ -21,19 +49,38 @@
         <button onclick="navigateTo('src/components/FinancialProgressTracker.html')">Financial Progress Tracker</button>
     </div>
 
+    <!-- Second row for external apps -->
+    <div class="button-container">
+        <a href="https://marudharhr.onrender.com/" target="_blank">
+            <button>Marudhar HR (Render App)</button>
+        </a>
+        <a href="https://stream-bill-generator-pjzpbb7a9fdxfmpgpg7t4d.streamlit.app/" target="_blank">
+            <button>Streamlit Bill Generator</button>
+        </a>
+    </div>
+
+    <!-- Optional iframe section -->
+    <div style="margin: 40px;">
+        <h2>Marudhar HR (Embedded)</h2>
+        <iframe src="https://marudharhr.onrender.com/">
+            Your browser does not support iframes.
+        </iframe>
+
+        <h2>Streamlit Bill Generator (Embedded)</h2>
+        <iframe src="https://stream-bill-generator-pjzpbb7a9fdxfmpgpg7t4d.streamlit.app/">
+            Your browser does not support iframes.
+        </iframe>
+    </div>
+
     <script>
         function navigateTo(url) {
             const button = event.target;
             try {
-                // Add loading state
                 button.classList.add('loading');
                 button.disabled = true;
-
-                // Navigate to the page
                 window.location.href = url;
             } catch (error) {
                 alert(`Error: ${error.message}`);
-                // Remove loading state
                 button.classList.remove('loading');
                 button.disabled = false;
             }
